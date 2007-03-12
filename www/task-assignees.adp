@@ -47,8 +47,8 @@
 <form method="post" action="@done_action_url@">
  <table width="100%" border="0" cellspacing="0" cellpadding="0">
   @done_export_vars;noquote@
-  <tr>
-    <td colspan="3" align="left">
+  <tr bgcolor="#dddddd">
+    <td colspan="3" align="right">
       <input type=submit value="Done" />
     </td>
   </tr>
