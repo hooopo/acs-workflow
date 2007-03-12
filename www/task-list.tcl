@@ -3,9 +3,9 @@ ad_page_contract {} {
     task_list
 }
 
-
 if { ![info exist date_format] || [empty_string_p $date_format] } {
-    set date_format "Mon fmDDfm, YYYY HH24:MI:SS"
+#    set date_format "Mon fmDDfm, YYYY HH24:MI:SS"
+    set date_format "YYYY-MM-DD HH24:MI"
 }
 if { ![info exists type] || [empty_string_p $type] } {
     set type enabled
@@ -18,6 +18,11 @@ if { ![info exists object_id] || [empty_string_p $object_id] } {
 if { ![info exists package_url] || [empty_string_p $package_url] } {
     set package_url [ad_conn package_url]
 }
+
+
+# Fire all message transitions before:
+wf_sweep_message_transition_tcl
+
 
 # DRB: setting return_url to point explicitly at ourselves will cause
 # custom workflow action panels to return to the right place whether
@@ -88,5 +93,12 @@ from   [join $from ",\n       "]
 where  [join $where "\n   and "]"
 
 db_multirow task_list started_tasks_select $sql {
-    set task_url "task?[export_vars -url {task_id return_url}]"
+    set task_url "[export_vars -base "task" {task_id return_url}]"
+
+    # Eliminate the "00:00" hour extension
+    # because 00:00 implicitely means "until the end of that day"
+    if {[regexp {^([^\ ]*)\ (00\:00)$} $deadline_pretty match day hour]} {
+	set deadline_pretty $day
+    }
+
 }

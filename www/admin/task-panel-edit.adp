@@ -4,7 +4,7 @@
 <property name="focus">panel.header</property>
 
 <form action="task-panel-edit-2" name="panel" method="post">
-@panel.export_vars@
+@panel.export_vars;noquote@
 
 <table>
   <tr>
@@ -23,6 +23,13 @@
     <td>
       <input type="radio" name="overrides_action_p" value="t" <%=[ad_decode $panel(overrides_action_p) "t" "checked=\"checked\"" ""]%> />Yes  
       <input type="radio" name="overrides_action_p" value="f" <%=[ad_decode $panel(overrides_action_p) "f" "checked=\"checked\"" ""]%> />No
+    </td>
+  </tr>
+  <tr>
+    <th align="right">Override both panels?</th>
+    <td>
+      <input type="radio" name="overrides_both_panels_p" value="t" <%=[ad_decode $panel(overrides_both_panels_p) "t" "checked=\"checked\"" ""]%> />Yes  
+      <input type="radio" name="overrides_both_panels_p" value="f" <%=[ad_decode $panel(overrides_both_panels_p) "f" "checked=\"checked\"" ""]%> />No
     </td>
   </tr>
   <tr>

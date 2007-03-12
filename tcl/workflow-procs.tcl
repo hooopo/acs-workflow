@@ -1706,6 +1706,7 @@ values
                header,
                template_url,
                overrides_action_p,
+	       overrides_both_panels_p,
                only_display_when_started_p
         from   wf_context_task_panels
         where  context_key = :context_key
@@ -1720,6 +1721,7 @@ values
  header,
  template_url,
  overrides_action_p,
+ overrides_both_panels_p,
  only_display_when_started_p)
 values
 ('[db_quote $context_key]',
@@ -1729,6 +1731,7 @@ values
  '[db_quote $header]',
  '[db_quote $template_url]',
  '[db_quote $overrides_action_p]',
+ '[db_quote $overrides_both_panels_p]',
  '[db_quote $only_display_when_started_p]');
 
 "
@@ -1775,3 +1778,96 @@ ad_proc wf_sweep_time_events {} {
     ns_log Notice "workflow-case: sweeping hold timeout"
     db_exec_plsql sweep_hold_timeout ""
 }
+
+
+
+
+ad_proc wf_sweep_message_transition_tcl {} {
+
+    Sweep those message transitions that have a TCL callback
+    and advance the transitions.
+    The procedure is designed to allow WF transitions to 
+    trigger TCL procedures, which is usually impossible,
+    because the entire WF works on the PlPg/SQL level.
+
+    We dont want to make changes in the WF data model right
+    now, so we're looking at the "enabled" callbacls of message 
+    transitions and check if the actual PlPg/SQL call is empty,
+    but if there is an argument and execute this argument as
+    a TCL call. Ugly, but may work...
+
+    @author Frank Bergmann (frank.bergmann@project-open.com)
+} {
+    ns_log Notice "workflow-case: sweeping message transition TCL"
+    set user_id [ad_get_user_id]
+    set ip_address [ad_conn peeraddr]
+
+    set sweep_sql "
+	select
+		ta.*,
+		tr.*,
+		ca.object_id,
+		ti.enable_custom_arg as tcl_call
+	from
+		wf_tasks ta,
+		wf_cases ca,
+		wf_transitions tr,
+		wf_context_transition_info ti
+	where
+		ta.workflow_key = tr.workflow_key
+		and ta.transition_key = tr.transition_key
+		and ta.workflow_key = ti.workflow_key
+		and ta.transition_key = ti.transition_key
+		and ta.case_id = ca.case_id
+		and
+			(ti.enable_callback = '' OR ti.enable_callback is NULL) and
+			ta.state = 'enabled'
+			and tr.trigger_type = 'message'
+    "
+
+    # Add an entry to the journal
+    set journal_sql "
+		select journal_entry__new (
+			null,
+			:case_id,
+		        'task ' || :task_id || ' tcl enable',
+		        'Enable TCL task' || :task_id || ': ' || :tcl_call,
+			now(),
+			:user_id,
+			:ip_address,
+			:error_msg
+		)
+    "
+
+
+    set found_transition_p 1
+    while {$found_transition_p} {
+
+	# By default: Just do this once...
+	set found_transition_p 0
+
+	# Execute the TCL commands and initiate events.
+	db_foreach sweep_message_transition_tcl $sweep_sql {
+
+	    # Found a transition to sweep - loop again
+	    set found_transition_p 1
+
+	    set error_msg "successful"
+	    ns_log Notice "wf_sweep_message_transition_tcl: executing '$tcl_call' ..."
+	    if {[catch {
+		eval $tcl_call
+		ns_log Notice "wf_sweep_message_transition_tcl: ... successful"
+		# Advance the message transition
+		wf_message_transition_fire $task_id
+	    } errmsg]} {
+		ns_log Notice "wf_sweep_message_transition_tcl: ... error: $errmsg"
+		set error_msg $errmsg
+	    }
+	    db_exec_plsql journal_entry $journal_sql
+	}
+
+    }
+
+}
+
+
