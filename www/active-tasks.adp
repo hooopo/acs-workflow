@@ -14,7 +14,6 @@
 	    <th>Activated Date</th>
 	    <th>Started Date</th>
 	    <th>Deadline</th>
-            <th>Holder</th>
             <th>Assignees</th>
             <th>Action</th>
 	  </tr>
@@ -31,7 +30,6 @@
 		<if @active_tasks.deadline_pretty@ not nil>@active_tasks.deadline_pretty@</if>
 		<else>&nbsp;</else>
 	      </td>
-	      <td><a href="@holding_user_url@">@holding_user_name@</a></td>
               <td>
                 <if @active_tasks.assignee_party_id@ not nil>
                   <group column="task_id">
@@ -42,11 +40,9 @@
 		      <else>
 			@active_tasks.assignee_name@
 		      </else>
-<!--
 		      <if @active_tasks.assignee_email@ not nil>
 			(<a href="mailto:@active_tasks.assignee_email@">@active_tasks.assignee_email@</a>)
 		      </if>
--->
 		    </li>
                   </group>
                 </if>
