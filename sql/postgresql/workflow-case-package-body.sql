@@ -640,7 +640,7 @@ begin
 
         -- make the same assignment as a manual assignment
 
-        IF add_task_assignment__permanent_p = ''t'' and v_role_key is not null THEN
+        if add_task_assignment__permanent_p = ''t'' then
 	    /* We do this up-front, because 
 	     * even though the user already had a task assignment, 
 	     * he might not have a case assignment.
@@ -995,10 +995,9 @@ declare
   execute_time_callback__transition_key         alias for $4;  
   v_rec                                         record;
   v_str                                         text;
-  v_result					timestamptz;
 begin
         if execute_time_callback__callback = '''' or execute_time_callback__callback is null then
-		return null;
+            raise EXCEPTION ''-20000: There''''s no time_callback function for the timed transition "%"'', execute_time_callback__transition_key;
         end if;
  
         v_str := ''select '' || execute_time_callback__callback || ''('' || 
@@ -1008,11 +1007,11 @@ begin
 
         for v_rec in execute v_str
         LOOP
-            v_result := v_rec.trigger_time;
+            return v_rec.trigger_time;
         end LOOP;
 
-	RAISE NOTICE ''workflow_case__execute_time_callback: res=%, sql=%'', v_result, v_str;
-        return v_result;
+        return null;
+     
 end;' language 'plpgsql';
 
 
@@ -1339,8 +1338,7 @@ declare
   v_finished_p                                        boolean;       
   task_rec                                            record;
 begin
-	RAISE NOTICE ''sweep_automatic_transitions(%,%)'', 
-		sweep_automatic_transitions__case_id, sweep_automatic_transitions__journal_id;
+
         PERFORM workflow_case__enable_transitions(sweep_automatic_transitions__case_id);
         while v_done_p != ''t'' loop
             v_done_p := ''t'';
@@ -1539,8 +1537,6 @@ begin
         return 0;
 end;' language 'plpgsql';
 
-
-
 -- procedure notify_assignee
 create or replace function workflow_case__notify_assignee (integer,integer,varchar,varchar)
 returns integer as '
@@ -1558,59 +1554,76 @@ declare
   v_subject                               text; 
   v_body                                  text; 
   v_request_id                            integer; 
-  v_workflow_url			  text;
-  v_acs_lang_package_id			  integer;
-  v_locale				  text;
+  v_workflow_url			  text;      
+  v_str                                   text;
 begin
         select to_char(ta.deadline,''Mon fmDDfm, YYYY HH24:MI:SS''),
-               acs_object__name(c.object_id), tr.transition_key, tr.transition_name
-        into   v_deadline_pretty, v_object_name, v_transition_key, v_transition_name
+               acs_object__name(c.object_id),
+               tr.transition_key,
+               tr.transition_name
+        into   v_deadline_pretty,
+               v_object_name, 
+               v_transition_key,
+               v_transition_name
           from wf_tasks ta, wf_transitions tr, wf_cases c
          where ta.task_id = notify_assignee__task_id
-	   and c.case_id = ta.case_id
-	   and tr.workflow_key = c.workflow_key
-	   and tr.transition_key = ta.transition_key;
+           and c.case_id = ta.case_id
+           and tr.workflow_key = c.workflow_key
+           and tr.transition_key = ta.transition_key;
 
-	select apm__get_value(p.package_id, ''SystemURL'') || site_node__url(s.node_id)
-	  into v_workflow_url
-	  from site_nodes s, apm_packages a,
-	       (select package_id
-		from apm_packages 
-		where package_key = ''acs-kernel'') p
-	 where s.object_id = a.package_id 
-	   and a.package_key = ''acs-workflow'';
-	v_workflow_url := v_workflow_url || ''task?task_id='' || notify_assignee__task_id;
+        select apm__get_value(p.package_id,''SystemURL'') || site_node__url(s.node_id)
+          into v_workflow_url
+          from site_nodes s, 
+               apm_packages a,
+               (select package_id
+                from apm_packages 
+                where package_key = ''acs-kernel'') p
+         where s.object_id = a.package_id 
+           and a.package_key = ''acs-workflow'';
 
-	  select wfi.principal_party into v_party_from
-	    from wf_context_workflow_info wfi, wf_tasks ta, wf_cases c
-	   where ta.task_id = notify_assignee__task_id
-	     and c.case_id = ta.case_id
-	     and wfi.workflow_key = c.workflow_key
-	     and wfi.context_key = c.context_key;
-	if NOT FOUND then v_party_from := -1; end if;
+        /* Mail sent from */
+          select wfi.principal_party
+	    into v_party_from
+            from wf_context_workflow_info wfi, wf_tasks ta, wf_cases c
+           where ta.task_id = notify_assignee__task_id
+             and c.case_id = ta.case_id
+             and wfi.workflow_key = c.workflow_key
+             and wfi.context_key = c.context_key;
+        if NOT FOUND then
+            v_party_from := -1;
+        end if;
 
-	-- Get the System Locale
-	select	package_id into	v_acs_lang_package_id
-	from	apm_packages
-	where	package_key = ''acs-lang'';
-	v_locale := apm__get_value (v_acs_lang_package_id, ''SiteWideLocale'');
+        /* Subject */
+        v_subject := ''Assignment: '' || v_transition_name || '' '' || v_object_name;
 
-	v_subject := ''Notification_Subject_'' || v_transition_key;
-	v_subject := acs_lang_lookup_message(v_locale, ''acs-workflow'', v_subject);
-	v_subject := replace(v_subject, ''%object_name%'', v_object_name);
-	v_subject := replace(v_subject, ''%transition_name%'', v_transition_name);
+        /* Body */
+        v_body := ''You have been assigned to a task.
+'' || ''
+Case        : '' || v_object_name || ''
+Task        : '' || v_transition_name || ''
+'';
 
-	v_body := ''Notification_Body_'' || v_transition_key;
-	v_body := acs_lang_lookup_message(v_locale, ''acs-workflow'', v_body);
-	v_body := replace(v_body, ''%object_name%'', v_object_name);
-	v_body := replace(v_body, ''%transition_name%'', v_transition_name);
-	v_body := replace(v_body, ''%deadline%'', v_deadline_pretty);
-	v_body := replace(v_body, ''%workflow_url%'', v_workflow_url);
+        if v_deadline_pretty != '''' and v_deadline_pretty is not null then
+            v_body := v_body || ''Deadline    : '' || v_deadline_pretty || ''
+'';
+        end if;
+
+	v_body := v_body ||''Task website: ''||v_workflow_url||''task?task_id=''||notify_assignee__task_id||''
+'';
+
+        /* 
+         * We would like to add a URL to go visit, but how do we get that URL?
+         *
+         * The notifications should really be sent from the application 
+         * server layer, not from the database 
+         */
+    
+        -- FIXME: last three args are also out varibles.
 
         if notify_assignee__callback != '''' and notify_assignee__callback is not null then
-            v_str :=  ''select '' || notify_assignee__callback || '' ('' ||
+            v_str :=  ''select '' || notify_assignee__callback || '' ('' || 
                       notify_assignee__task_id || '','' ||
-                      coalesce(quote_literal(notify_assignee__custom_arg),''null'') ||
+                      coalesce(quote_literal(notify_assignee__custom_arg),''null'') || 
                       '','' ||
                       notify_assignee__user_id || '','' ||
                       v_party_from || '','' ||
@@ -1619,7 +1632,7 @@ begin
 
             execute v_str;
         else
-            v_request_id := acs_mail_nt__post_request (
+            v_request_id := acs_mail_nt__post_request (       
                 v_party_from,                 -- party_from
                 notify_assignee__user_id,     -- party_to
                 ''f'',                        -- expand_group
@@ -1704,14 +1717,14 @@ begin
                     enable_transitions__case_id, 
                     trans_rec.transition_key
                 );
-            end if;
-
-	    v_trigger_time := workflow_case__execute_time_callback (
+            else if trans_rec.trigger_type = ''time'' then
+		    v_trigger_time := workflow_case__execute_time_callback (
                                         trans_rec.time_callback, 
                                         trans_rec.time_custom_arg,
                                         enable_transitions__case_id, 
                                         trans_rec.transition_key);
-
+		 end if;
+            end if;
 
             /* we are ready to insert the row */
             select wf_task_id_seq.nextval into v_task_id from dual;

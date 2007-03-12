@@ -22,7 +22,6 @@
     select p.header,
            p.template_url,
            p.overrides_action_p,
-           p.overrides_both_panels_p,
            p.only_display_when_started_p
     from   wf_context_task_panels p
     where  p.workflow_key = :workflow_key
