@@ -2,66 +2,41 @@
 <property name=title>@task.task_name;noquote@</property>
 <property name="context">@context;noquote@</property>
 
-	<div class="component">
-		<table width="100%">
-		<tr>
-		<td>
-		<div class="component_header_rounded" >
-			<div class="component_header">
-				<div class="component_title">Task: @task.task_name@</div>
-				      <div class="component_icons"></div>
-				</div>
-			</div>
-		</td>
-		</tr>
-		<tr>
-		<td>
-			<div class="component_body">
-				<table width="100%">
-					<tr>
-						<multiple name="panels">
-						        <td valign="top">
-	    							<include src="@panels.template_url;noquote@" &="task" &="task_attributes_to_set" &="task_assigned_users" &="task_roles_to_assign" &="export_form_vars" &="return_url">
-			        			</td>
-						</multiple>
-					</tr>
-				</table>
-			 </div>	
-		</td></tr>
-		</table>
-	</div>
+<table width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr><td bgcolor="#cccccc">
+
+	<table width="100%" cellspacing="1" cellpadding="2" border="0">
+	<tr bgcolor="#9bbad6">
+	    <th colspan="@panels:rowcount@"><big>Task: @task.task_name@</big></th>
+	</tr>
+	<tr>
+
+	    <multiple name="panels">
+	        <td bgcolor="@panels.bgcolor@" valign="top">
+	    	<include src="@panels.template_url;noquote@" &="task" &="task_attributes_to_set" &="task_assigned_users" &="task_roles_to_assign" &="export_form_vars" &="return_url">
+	        </td>
+	    </multiple>
+
+
+	</tr>
+	</table>
+	
+</td></tr>
+</table>
+
 <p>
 
 <if @extreme_p@ eq 1> 
-
-        <div class="component">
-                <table width="100%">
-                <tr>
-                <td>
-                <div class="component_header_rounded" >
-                        <div class="component_header">
-                                <div class="component_title">Admin actions:</div>
-                                      <div class="component_icons"></div>
-                                </div>
-                        </div>
-                </td>
-                </tr>
-                <tr>
-                <td>
-                        <div class="component_body">
-				<table class="panel" width="100%">
-					<tr><td>
-						<ul class="admin_links">
-						<multiple name="extreme_actions">
-						    <li><a href="@extreme_actions.url@">@extreme_actions.title@</a></li>
-						</multiple>
-						</ul>
-					</td></tr>
-				</table>
-                         </div>
-                </td></tr>
-                </table>
-        </div>
+	<table width="100%">
+	<tr><td align="center" bgcolor="#dddddd">
+	<small>
+	Extreme actions: 
+	<multiple name="extreme_actions">
+	    (<a href="@extreme_actions.url@">@extreme_actions.title@</a>)
+	</multiple>
+	</small>
+	</td></tr>
+	</table>
 </if>
 
 <p>
