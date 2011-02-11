@@ -224,6 +224,7 @@ ad_proc wf_generate_dot_representation {
     {-orientation portrait}
     {-rankdir UD}
     {-size}
+    {-debug 0 }
     workflow_varname
 } {
     Generates a dot-file for use with Graphviz.
@@ -355,25 +356,21 @@ ad_proc wf_generate_dot_representation {
     
     append dot_text "}"
 
-    ns_log Notice $dot_text
+    if {$debug} { ns_log Notice "wf_generate_dot_representation: $dot_text" }
 
     return $dot_text
 }
-
 
 ad_proc wf_graphviz_dot_exec {
     {-output ismap}
     {-to_file:boolean}
     dot
 } {
-    Executes the graphviz binary to generate gif-image or imagemap or one of the other things
-    that it's capable of. It'll optionally store the output in a file instead of return it in a Tcl string,
-    which is necessary for GIFs, because AOLserver still doesn't handle nulls correctly.
-
+    Implementation of wf_graphviz_dot_exec.
     @author Lars Pind (lars@pinds.com)
     @creation-date 29 September 2000
-
 } {
+    ns_log Notice "wf_graphviz_dot_exec: -to_file=$to_file_p -output=$output dot=$dot"
     set package_id [db_string package_id {select package_id from apm_packages where package_key='acs-workflow'}]
     set graphviz_dot_path [ad_parameter -package_id $package_id "graphviz_dot_path"]
     set tmp_path [ad_parameter -package_id $package_id "tmp_path"]
@@ -382,12 +379,12 @@ ad_proc wf_graphviz_dot_exec {
 	return -code error "Graphviz is not installed."
     }
 
-    # 091031 fraber: Doesn't work like this with Windows installer.
+#    091031 fraber: Doesn't work like this with Windows installer.
 #    if { ![file executable $graphviz_dot_path] } {
 #	return -code error "Can't execute graphviz binary at $graphviz_dot_path"
 #    }
 
-    # 091103 fraber: Doesn't work like this with Windows installer.
+#    091103 fraber: Doesn't work like this with Windows installer.
 #    if { ![file isdirectory $tmp_path] } {
 #	return -code error "Parameter acs-workflow.tmp_path points to a non-existing directory: $tmp_path"
 #    }
@@ -402,7 +399,7 @@ ad_proc wf_graphviz_dot_exec {
 	set tmp_out [ns_mktemp "$tmp_path/outXXXXXX"]
     }
 
-
+    # Write the DOT definition into the temporary input file
     set fw [open $tmp_dot "w"]
     puts -nonewline $fw $dot
     close $fw
@@ -410,8 +407,11 @@ ad_proc wf_graphviz_dot_exec {
     if {[catch {
 	if { $to_file_p } {
 	    exec -keepnewline $graphviz_dot_path -T$output -o $tmp_out $tmp_dot
+	    ns_log Notice "wf_graphviz_dot_exec: exec -keepnewline $graphviz_dot_path -T$output -o $tmp_out $tmp_dot"
 	} else {
 	    set result [exec -keepnewline $graphviz_dot_path -T$output $tmp_dot]
+	    ns_log Notice "wf_graphviz_dot_exec: exec -keepnewline $graphviz_dot_path -T$output $tmp_dot"
+	    ad_return_complaint 1 $result
 	}
     } err_msg]} {
 	
@@ -442,9 +442,11 @@ ad_proc wf_graphviz_dot_exec {
 		<pre>$err_msg</pre>
 	"
     }
-    
+
+    # Delete the temporary _input_ file for dot.
+    # (the output file remains).
     file delete $tmp_dot
-    
+
     if { $to_file_p } {
 	return $tmp_out
     } else {
