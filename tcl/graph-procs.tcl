@@ -406,10 +406,11 @@ ad_proc wf_graphviz_dot_exec {
     
     if {[catch {
 	if { $to_file_p } {
-	    exec -keepnewline $graphviz_dot_path -T$output -o $tmp_out $tmp_dot
+	    exec -keepnewline $graphviz_dot_path -T$output -Gcharset=latin1 -o $tmp_out $tmp_dot
+
 	    ns_log Notice "wf_graphviz_dot_exec: exec -keepnewline $graphviz_dot_path -T$output -o $tmp_out $tmp_dot"
 	} else {
-	    set result [exec -keepnewline $graphviz_dot_path -T$output $tmp_dot]
+	    set result [exec -keepnewline $graphviz_dot_path -Gcharset=latin1 -T$output $tmp_dot]
 	    ns_log Notice "wf_graphviz_dot_exec: exec -keepnewline $graphviz_dot_path -T$output $tmp_dot"
 	    ad_return_complaint 1 $result
 	}
@@ -426,6 +427,22 @@ ad_proc wf_graphviz_dot_exec {
 		<li>Log in as root.
 		<li>Execute: <tt>dot -c</tt>
 		</ol>
+		<br>
+		Here is the original error message:<br>
+		<pre>$err_msg</pre><br>
+
+	    "
+	    ad_script_abort
+	}
+
+	if {[regexp {Format: "[^"]*" not recognized} $err_msg match]} { 
+	    ad_return_complaint 1 "
+		<b>Error executing 'dot' GraphViz</b>:<br>&nbsp;<br>
+		This error message probably means that your GraphViz
+	        installtion is not complete.<br>
+	        You also need to install 'graphviz-gd'. For example in 
+	        RHEL/CentOS you need to execute as root:<br>
+	        <pre>yum install graphviz-gd</pre>
 		<br>
 		Here is the original error message:<br>
 		<pre>$err_msg</pre><br>
