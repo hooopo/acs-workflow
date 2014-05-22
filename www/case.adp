@@ -1,5 +1,5 @@
 <master>
-<property name="title">@case.object_name;noquote@ case</property>
+<property name="title">#acs-workflow.lt_caseobject_namenoquot_1#</property>
 <property name="context">@context;noquote@</property>
 
 <table width="100%" cellspacing="4" cellpadding="2" border="0">
@@ -13,9 +13,9 @@
         <tr>
           <td bgcolor="#cccccc">
             <table border="0" cellspacing="1" cellpadding="2" width="100%">
-              <tr bgcolor="#ccccff">
+              <tr bgcolor="#cccccc">
                 <th>
-                  This case is currently @case.state@
+                  #acs-workflow.lt_This_case_is_currentl#
                 </th>
               </tr>
               <tr bgcolor="#ffffff">
@@ -24,14 +24,14 @@
                     <tr>
                       <td>
                         <if @actions:rowcount@ gt 0>
-			  Change state:
+			  #acs-workflow.Change_state#
 			  <multiple name="actions">
 			    (<a href="@actions.url@">@actions.title@</a>)
 			  </multiple>
                         </if>
                       </td>
                       <td align="right">
-                        (<a href="@case.debug_url@">debug case</a>)
+                        (<a href="@case.debug_url@">#acs-workflow.debug_case#</a>)
                       </td>
                     </tr>
                   </table>
@@ -49,9 +49,9 @@
         <tr>
           <td bgcolor="#cccccc">
             <table border="0" cellspacing="1" cellpadding="2" width="100%">
-              <tr bgcolor="#ccccff">
+              <tr bgcolor="#cccccc">
                 <th>
-                  Active Tasks
+                  #acs-workflow.Active_Tasks#
                 </th>
               </tr>
               <tr bgcolor="#ffffff">
@@ -71,9 +71,9 @@
         <tr>
           <td bgcolor="#cccccc">
             <table border="0" cellspacing="1" cellpadding="2" width="100%">
-              <tr bgcolor="#ccccff">
+              <tr bgcolor="#cccccc">
                 <th>
-                  Manual Assignments
+                  #acs-workflow.Manual_Assignments#
                 </th>
               </tr>
               <tr bgcolor="#ffffff">
@@ -93,9 +93,9 @@
         <tr>
           <td bgcolor="#cccccc">
             <table border="0" cellspacing="1" cellpadding="2" width="100%">
-              <tr bgcolor="#ccccff">
+              <tr bgcolor="#cccccc">
                 <th>
-                  Deadlines
+                  #acs-workflow.Deadlines#
                 </th>
               </tr>
               <tr bgcolor="#ffffff">
@@ -115,9 +115,9 @@
         <tr>
           <td bgcolor="#cccccc">
             <table border="0" cellspacing="1" cellpadding="2" width="100%">
-              <tr bgcolor="#ccccff">
+              <tr bgcolor="#cccccc">
                 <th>
-                  Past Tasks
+                  #acs-workflow.Past_Tasks#
                 </th>
               </tr>
               <tr bgcolor="#ffffff">
@@ -137,9 +137,9 @@
         <tr>
           <td bgcolor="#cccccc">
             <table border="0" cellspacing="1" cellpadding="2" width="100%">
-              <tr bgcolor="#ccccff">
+              <tr bgcolor="#cccccc">
                 <th>
-                  Attributes
+                  #acs-workflow.Attributes#
                 </th>
               </tr>
               <tr bgcolor="#ffffff">
@@ -162,9 +162,9 @@
         <tr>
           <td bgcolor="#cccccc">
             <table border="0" cellspacing="1" cellpadding="2" width="100%">
-              <tr bgcolor="#ccccff">
+              <tr bgcolor="#cccccc">
                 <th>
-                  Process State
+                  #acs-workflow.Process_State#
                 </th>
               </tr>
               <tr bgcolor="#ffffff">
@@ -190,4 +190,5 @@
 </table>
 
 </master>
+
 
